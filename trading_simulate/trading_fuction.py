@@ -49,7 +49,7 @@ class Trading:
         if limit_price > 0:
             order = self.api.insert_order(code, direction='BUY', offset='OPEN', volume=volume, limit_price=limit_price)
             a = 0
-            while (order.status != "FINISHED") and (a < 10):
+            while (order.status != "FINISHED") and (a < 20):
                 a += 1
                 self.api.wait_update()
                 print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order.status, order.volume_left))
@@ -68,7 +68,7 @@ class Trading:
         if limit_price > 0:
             order = self.api.insert_order(code, direction='SELL', offset='OPEN', volume=volume, limit_price=limit_price)
             a = 0
-            while (order.status != "FINISHED") and (a < 10):
+            while (order.status != "FINISHED") and (a < 20):
                 a += 1
                 self.api.wait_update()
                 print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order.status, order.volume_left))
@@ -94,7 +94,7 @@ class Trading:
                 order = self.api.insert_order(code, direction='BUY', offset='CLOSE', volume=position_short,
                                          limit_price=limit_price)
                 a = 0
-                while (order.status != "FINISHED") and (a < 10):
+                while (order.status != "FINISHED") and (a < 20):
                     a += 1
                     self.api.wait_update()
                     print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order.status, order.volume_left))
@@ -116,13 +116,13 @@ class Trading:
             if position_short:
                 order_bp = self.api.insert_order(code, direction='BUY', offset='CLOSE', volume=position_short, limit_price=limit_price)
                 a = 0
-                while (order_bp.status != "FINISHED") and (a < 10):
+                while (order_bp.status != "FINISHED") and (a < 20):
                     a += 1
                     self.api.wait_update()
                     print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order_bp.status, order_bp.volume_left))
             order = self.api.insert_order(code, direction='BUY', offset='OPEN', volume=volume, limit_price=limit_price)
             a = 0
-            while (order.status != "FINISHED") and (a < 10):
+            while (order.status != "FINISHED") and (a < 20):
                 a += 1
                 self.api.wait_update()
                 print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order.status, order.volume_left))
@@ -144,13 +144,13 @@ class Trading:
             if position_long:
                 order_sp = self.api.insert_order(code, direction='SELL', offset='CLOSE', volume=position_long, limit_price=limit_price)
                 a = 0
-                while (order_sp.status != "FINISHED") and (a < 10):
+                while (order_sp.status != "FINISHED") and (a < 20):
                     a += 1
                     self.api.wait_update()
                     print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order_sp.status, order_sp.volume_left))
             order = self.api.insert_order(code, direction='SELL', offset='OPEN', volume=volume, limit_price=limit_price)
             a = 0
-            while (order.status != "FINISHED") and (a < 10):
+            while (order.status != "FINISHED") and (a < 20):
                 a += 1
                 self.api.wait_update()
                 print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order.status, order.volume_left))
@@ -176,7 +176,7 @@ class Trading:
                 order = self.api.insert_order(code, direction='SELL', offset='CLOSE', volume=position_long,
                                          limit_price=limit_price)
                 a = 0
-                while (order.status != "FINISHED") and (a < 10):
+                while (order.status != "FINISHED") and (a < 20):
                     a += 1
                     self.api.wait_update()
                     print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order.status, order.volume_left))
