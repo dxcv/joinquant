@@ -6,8 +6,6 @@ import pandas as pd
 import time
 from jqdatasdk import *
 import datetime
-from trading_future.future_singleton import Future
-# auth('18610039264', 'zg19491001')
 auth('15658001226', 'taiyi123')
 
 
@@ -181,64 +179,3 @@ class Trading:
                     self.api.wait_update()
                     print("code: %s, 委托单状态: %s, 未成交手数: %d 手" % (code, order.status, order.volume_left))
         return order
-
-
-if __name__ == '__main__':
-    signal_path = 'G://trading_strategy//'
-    bars = 5
-    # api = TqApi(TqAccount("快期模拟", "519518384@qq.com", "zf1991"), web_gui=True)
-    api = TqApi(TqAccount("快期模拟", "519518384@qq.com", "zf1991"), web_gui=True)
-    Trd = Trading(api)
-    calen = get_trade_days(count=bars)
-    today = datetime.date.today()
-    calen = list(calen)
-    if today in calen:
-        calen, next_tradeday, EndDate, StartDate, hq_last_date = Trd.get_date(calen, today)
-
-        trading_info = pd.read_csv(signal_path + 'position_ymjh_' + hq_last_date + '.csv', index_col=0)
-        trading_info.index = trading_info['trading_code']
-        while True:
-            orders = api.get_order()
-            for oid, order in orders.items():
-                if order.status == 'ALIVE':
-                    api.cancel_order(order)
-            for code in trading_info.trading_code.tolist():
-                position_account = api.get_position(code)
-                position_long = position_account.pos_long
-                position_short = position_account.pos_short
-                position = trading_info.loc[code]['position']
-                if position == 0 and position_short == 0 and position_long == 0:
-                    print('%s:   仓位%s手, 状态：%s' % (code, position, '完成'))
-                    continue
-                elif position == position_long and position_short == 0:
-                    print('%s: 多头持仓%s手, 状态：%s' % (code, position, '完成'))
-                    continue
-                elif position == -position_short and position_long == 0:
-                    print('%s: 空头持仓%s手, 状态：%s' % (code, position, '完成'))
-                    continue
-                else:
-                    print('%s:   仓位%s手, 状态：%s' % (code, position, '未完成'))
-                quote = api.get_quote(code)
-                if position > 0:
-                    if position_short > 0:
-                        order_bp = Trd.insert_order_bp_limit(code)
-                    diff = position - position_long
-                    if diff > 0:
-                        order = Trd.insert_order_bk_limit(code, int(diff))
-                    elif diff < 0:
-                        order = Trd.insert_order_sp_limit(code, -int(diff))
-                if position < 0:
-                    if position_long > 0:
-                        order_sp = Trd.insert_order_sp_limit(code)
-                    diff = -position - position_short
-                    if diff > 0:
-                        order = Trd.insert_order_sk_limit(code, int(diff))
-                    elif diff < 0:
-                        order = Trd.insert_order_bp_limit(code, -int(diff))
-                if position == 0:
-                    if position_short > 0:
-                        order_bp = Trd.insert_order_bp_limit(code)
-                    if position_long > 0:
-                        order_sp = Trd.insert_order_sp_limit(code)
-            time.sleep(5)
-            print('==========================================================================================')

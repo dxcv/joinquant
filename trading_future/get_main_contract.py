@@ -21,7 +21,7 @@ if __name__ == '__main__':
     symbol_lst = ['C', 'CS', 'A', 'B', 'M', 'RM', 'Y', 'P', 'OI', 'L', 'V', 'PP', 'TA', 'RU', 'BU', 'MA', 'SC', 'FU',
                    'AL', 'ZN', 'CU', 'PB', 'NI', 'SN', 'J', 'JM', 'I', 'RB', 'HC', 'ZC', 'SF', 'SM', 'FG', 'IF',
                    'IH', 'IC', 'T', 'TF', 'AG', 'AU', 'JD', 'AP', 'CJ', 'CF', 'SR']
-    symbol_lst = ['RU', 'C', 'FG', 'P', 'AU', 'SR', 'CU', 'ZN']
+    symbol_lst = ['RU', 'C', 'FG', 'P', 'AU', 'SR', 'CU', 'ZN', 'SC']
     date = datetime.date.today()
     # date = '2020-05-07'
     bars = 5

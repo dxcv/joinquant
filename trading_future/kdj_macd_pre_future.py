@@ -48,7 +48,6 @@ myclient = pymongo.MongoClient('mongodb://juzheng:jz2018*@192.168.2.201:27017/')
 jzmongo = Arctic(myclient)
 
 
-
 # 获取价格
 def stock_price(sec, sday, eday):
     """
@@ -324,8 +323,8 @@ if __name__ == '__main__':
     if datetime.datetime.now().hour < 9:
         end_day = calen[-2].strftime('%Y-%m-%d')
     # end_day = '2020-04-20'
-    mod = 0
-    hold_code_lst = ['RU', 'P', 'AU', 'C', 'CU', 'ZN']
+    mod = 1
+    hold_code_lst = ['RU', 'P', 'AU', 'C', 'CU', 'ZN', 'SR', 'SC']
     normalize_code_future, index_code_lst = get_normal_future_index_code()
     method = 1
     n = 1  # 回测周期

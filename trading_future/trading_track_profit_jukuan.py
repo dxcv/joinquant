@@ -26,15 +26,18 @@ import talib as tb
 import tkinter
 import tkinter.messagebox
 
-# auth('18610039264', 'zg19491001')
+auth('18610039264', 'zg19491001')
 style.use('ggplot')
-
-auth('15658001226', 'taiyi123')
+from tqsdk import TqApi, TqSim, TqAccount
+# auth('15658001226', 'taiyi123')
 myclient = pymongo.MongoClient('mongodb://juzheng:jz2018*@192.168.2.201:27017/')
 jzmongo = Arctic(myclient)
 from data_engine.data_factory import DataFactory
 from data_engine.instrument.future import Future
 import data_engine.setting as setting
+from trading_simulate.trading_fuction import Trading
+from email_fuction import send_email
+
 
 class Future_ex(Future):
     def __init__(self,symbol,by_ctp_instrument=False,info=None,rd=None):
@@ -145,24 +148,53 @@ def get_alert_info(df, txt):
         tkinter.messagebox.showinfo('提示', info_txt)
 
 
+def get_date(calen, today):
+    next_tradeday = get_trade_days(start_date=today + datetime.timedelta(days=1), end_date='2030-01-01')[0]
+    if datetime.datetime.now().hour > 15:
+        calen.append(next_tradeday)
+    EndDate = calen[-1]
+    StartDate = calen[0]
+    hq_last_date = calen[-2]
+    return calen, next_tradeday, EndDate, StartDate, str(hq_last_date)[:10]
+
+
 if __name__ == '__main__':
+    from alarm_module import LogAsyncService
+    from alarm_module import logger_async
+    import logging
+
+    receiver = ['xiahutao@163.com', '3467518502@qq.com', '897174480@qq.com']
+    # with LogAsyncService() as log:
+    #     try:
+    #         # send_email(df, '完成1次', receiver)
+    #         logger_async.log(__name__, logger_async.critical, '完成第一次交易')
+    #     except Exception as e:
+    #         print(str(e))
+
     DataFactory.config(MONGDB_PW='jz2018*', MONGDB_IP='192.168.2.201', MONGDB_USER='juzheng',
                        DATASOURCE_DEFAULT=global_variable.DATASOURCE_REMOTE
                        , logging_level=global_variable.logging.INFO)
     rd = redis.Redis('192.168.1.36')
-    hold_code_lst = ['sc2009', 'pp2009']
+
+    # api = TqApi(TqAccount("G国泰君安", "85030120", "jz04282020"), web_gui=True)
+    # Trd = Trading(api)
+    hold_code_lst = ['sc2007', 'sc2012']
     start_day = datetime.date.today().strftime('%Y-%m-%d')
-    end_day = datetime.date.today().strftime('%Y-%m-%d')
+    today = datetime.date.today()
+    calen = get_trade_days(count=5)
+    calen, next_tradeday, EndDate, StartDate, hq_last_date = get_date(calen, today)
+    end_day = EndDate
+    print(end_day)
 
     normalize_code_future, index_code_lst = get_normal_future_index_code(hold_code_lst)
     for index_code in index_code_lst:
         symble = normalize_code_future[index_code]
 
-    long_code_lst = ['sc2009']
-    short_code_lst = ['pp2009']
+    long_code_lst = ['sc2007']
+    short_code_lst = ['sc2012']
     # long_cost_lst = [311.16]
-    long_cost_lst = [306.02]
-    short_cost_lst = [6962.27]
+    long_cost_lst = [267.6]
+    short_cost_lst = [318.7]
     long_volume = [1]
     short_volume = [-1]
     long_contract = [Future(symbol=i[:-4].upper()).contract_size for i in long_code_lst]
@@ -170,9 +202,11 @@ if __name__ == '__main__':
     lst = []
     long_value_ini = np.sum([long_cost_lst[i] * long_contract[i] * long_volume[i] for i in range(len(long_code_lst))])
     short_value_ini = np.sum([short_cost_lst[i] * short_contract[i] * short_volume[i] for i in range(len(short_code_lst))])
+    times1 = 0
+    times2 = 0
+    times3 = 0
+    while datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') < '2020-05-20 02:30:00':
 
-    for x in range(1000000000):
-        print(x)
         lst = []
         long_value_now = 0
         short_value_now = 0
@@ -202,8 +236,44 @@ if __name__ == '__main__':
         df = pd.DataFrame([[long_chng, short_chng, long_chng + short_chng]], columns=['long', 'short', 'net_profit'])
         print(datetime.datetime.now())
         print(df)
-        if df.net_profit.tolist()[0] < -0.08:
-            get_alert_info(df, '净亏损超4%：')
+
+        print(df.net_profit.tolist()[0])
+
+        if (df.net_profit.tolist()[0] < -0.01) and times1 == 0:
+            try:
+                send_email(df, '完成1次', receiver)
+                # logger_async.log(__name__, logger_async.critical, '完成第一次交易')
+            except Exception as e:
+                print(str(e))
+            try:
+                api = TqApi(TqAccount("G国泰君安", "85030120", "jz04282020"), web_gui=True)
+                Trd = Trading(api)
+                order = Trd.insert_order_sk_limit('INE.sc2012', 1)
+                order = Trd.insert_order_bk_limit('INE.sc2007', 1)
+                times1 += 1
+                break
+            except Exception as e:
+                print(str(e))
+
+            # get_alert_info(df, '净亏损超4%：')
+        # if (df.net_profit.tolist()[0] < -0.02) and times2 == 0:
+        #     order = Trd.insert_order_sk_limit('INE.sc2012', 1)
+        #     order = Trd.insert_order_bk_limit('INE.sc2007', 1)
+        #     times2 += 1
+        #     try:
+        #         send_email(df, '完成2次', receiver)
+        #         # logger_async.log(__name__, logger_async.critical, '完成第一次交易')
+        #     except Exception as e:
+        #         print(str(e))
+        # if (df.net_profit.tolist()[0] < -0.03) and times3 == 0:
+        #     order = Trd.insert_order_sk_limit('INE.sc2012', 1)
+        #     order = Trd.insert_order_bk_limit('INE.sc2007', 1)
+        #     times3 += 1
+        #     try:
+        #         send_email(df, '完成3次', receiver)
+        #         # logger_async.log(__name__, logger_async.critical, '完成第一次交易')
+        #     except Exception as e:
+        #         print(str(e))
         time.sleep(5)
 
 

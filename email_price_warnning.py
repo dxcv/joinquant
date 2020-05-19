@@ -3,7 +3,7 @@
 # @Author  : zhangfang
 
 from __future__ import division
-from notify.notifyapi import *
+# from notify.notifyapi import *
 import pandas as pd
 import os
 import numpy as np
@@ -308,6 +308,3 @@ if __name__ == '__main__':
         res_n = res_n[res_n['warnning'] == True]
         subject = str(today)[:10] + context1
         send_email(ret.copy().reset_index(drop=True), subject, From, receiver)
-        if len(res_n) > 0:
-            errcode, errmsg = send_yeecall("8615624980748", subject, '触发价格底线股票: ' + '_'.join(res_n.code.tolist()))
-            print(errcode, errmsg)

@@ -1,0 +1,108 @@
+
+version: 1
+disable_existing_loggers: False
+
+filters:
+    async:
+      class: logging.Filter
+      name: async
+    sync:
+      class: logging.Filter
+      name: async
+
+
+formatters:
+    async:
+        format: "%(asctime)s - %(file_path)s[line:%(row)d] - %(func_name)s - %(levelname)s: %(message)s"
+    sync:
+        format: "%(asctime)s - %(pathname)s[line:%(lineno)d] - %(funcName)s - %(levelname)s: %(message)s"
+
+handlers:
+    console_async:
+            class: logging.StreamHandler
+            level: DEBUG
+            formatter: async
+            stream: ext://sys.stdout
+            filters: [async]
+    info_file_handler_async:
+            class: logging.handlers.TimedRotatingFileHandler
+            level: INFO
+            formatter: async
+            filename: ./logs/info.log
+            when: D
+            interval: 1
+            backupCount: 30
+            encoding: utf8
+            filters: [async]
+    error_file_handler_async:
+            class: logging.handlers.RotatingFileHandler
+            level: ERROR
+            formatter: async
+            filename: ./logs/errors.log
+            maxBytes: 10485760
+            backupCount: 20
+            encoding: utf8
+            filters: [async]
+    critical_file_handler_async:
+            class: logging.handlers.SMTPHandler
+            level: CRITICAL
+            formatter: async
+            mailhost: smtp.qq.com
+            fromaddr: 774574159@qq.com
+            toaddrs: 519518384@qq.com
+            subject: WARNING
+            credentials: [774574159@qq.com, asdkqzrtjvpdbedb]
+            filters: [async]
+    console_sync:
+            class: logging.StreamHandler
+            level: DEBUG
+            formatter: sync
+            stream: ext://sys.stdout
+            filters: [async]
+    info_file_handler_sync:
+            class: logging.handlers.TimedRotatingFileHandler
+            level: INFO
+            formatter: sync
+            filename: ./logs/info.log
+            when: D
+            interval: 1
+            backupCount: 30
+            encoding: utf8
+            filters: [async]
+    error_file_handler_sync:
+            class: logging.handlers.RotatingFileHandler
+            level: ERROR
+            formatter: sync
+            filename: ./logs/errors.log
+            maxBytes: 10485760
+            backupCount: 20
+            encoding: utf8
+            filters: [async]
+    critical_file_handler_sync:
+            class: logging.handlers.SMTPHandler
+            level: CRITICAL
+            formatter: sync
+            mailhost: smtp.qq.com
+            fromaddr: 774574159@qq.com
+            toaddrs: 519518384@qq.com
+            subject: WARNING
+            credentials: [774574159@qq.com, asdkqzrtjvpdbedb]
+            filters: [async]
+loggers:
+    async:
+            level: DEBUG
+            handlers: [console_async,info_file_handler_async,error_file_handler_async,critical_file_handler_async]
+            fitlers: [async]
+            propagate: no
+
+    sync:
+        level: DEBUG
+        handlers: [console_sync,info_file_handler_sync,error_file_handler_sync,critical_file_handler_sync]
+        fitlers: [sync]
+        propagate: no
+
+root:
+    level: INFO
+    handlers: [console_async,info_file_handler_async,error_file_handler_async,critical_file_handler_async,
+               console_sync,info_file_handler_sync,error_file_handler_sync,critical_file_handler_sync]
+    fitlers: [async, sync]
