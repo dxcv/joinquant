@@ -17,134 +17,61 @@ import copy
 import math
 from arctic import Arctic, TICK_STORE, CHUNK_STORE
 style.use('ggplot')
+from jqdatasdk import *
+
+import copy
+auth('18610039264', 'zg19491001')
+import datetime
+import talib as tb
+import pymongo
+from arctic import Arctic, TICK_STORE, CHUNK_STORE
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.header import Header
+from smtplib import SMTP_SSL
 
 
-def stock_price_jz(sec, sday, eday):
+def values_data_cgo(stockcode, count, eday):
     """
-    输入 股票代码，开始日期，截至日期
-    输出 个股的后复权的开高低收价格
+    输入 股票代码，查询中止日，以及查询多少条数据
+    输出 dataframe 市值表 字段为 code :股票代码  day:日期  capitalization:总股本（万股）
+    circulating_cap ：流通股本（万股） market_cap：总市值（亿） circulating_market_cap：流通市值（亿）
+    turnover_ratio：换手率 pe_ratio：市盈率 TTM pe_ratio_lyr：静态市盈率  pb_ratio：市净率
+    ps_ratio：市销率  pcf_ratio：市现率
     """
-    temp = jzmongo['wind_index'].read(sec)
-    temp = temp[(temp['date'] >= sday) & (temp['date'] <= eday)]
-    return temp
+    q = query(valuation.code,
+              valuation.turnover_ratio,
+              ).filter(valuation.code == stockcode)
 
+    df = get_fundamentals_continuously(q, count=count, end_date=eday, panel=False)[
+        ['day', 'code', 'turnover_ratio']]
 
-def yearsharpRatio(netlist, n):
-    '''
-    :param netlist:
-    :param n: 每交易日对应周期数
-    :return:
-    '''
-    row = []
-    new_lst = copy.deepcopy(netlist)
-    new_lst = [new_lst[i] for i in range(0, len(new_lst), n)]
-    for i in range(1, len(new_lst)):
-        row.append(math.log(new_lst[i] / new_lst[i - 1]))
-    return np.mean(row) / np.std(row) * math.pow(252, 0.5)
-
-
-def maxRetrace(lst, n):
-    '''
-    :param list:netlist
-    :param n:每交易日对应周期数
-    :return: 最大历史回撤
-    '''
-    Max = 0
-    new_lst = copy.deepcopy(lst)
-    new_lst = [new_lst[i] for i in range(0, len(new_lst), n)]
-
-    for i in range(len(new_lst)):
-        if 1 - new_lst[i] / max(new_lst[:i + 1]) > Max:
-            Max = 1 - new_lst[i] / max(new_lst[:i + 1])
-    return Max
-
-
-def annROR(netlist, n):
-    '''
-    :param netlist:净值曲线
-    :param n:每交易日对应周期数
-    :return: 年化收益
-    '''
-    return math.pow(netlist[-1] / netlist[0], 252 * n / len(netlist)) - 1
+    today = datetime.date.today()
+    temp = get_price(stockcode, start_date=today, end_date=today, frequency='daily', fields=None, skip_paused=True,
+                     fq='post', count=None).reset_index() \
+        .rename(columns={'index': 'day'})
+    volume = temp.volume.tolist()[-1] * 100 * 100
+    q1 = query(finance.STK_CAPITAL_CHANGE.code,
+               finance.STK_CAPITAL_CHANGE.change_date,
+               finance.STK_CAPITAL_CHANGE.share_trade_total).filter(finance.STK_CAPITAL_CHANGE.code == stockcode)
+    circulating_cap = finance.run_query(q1).sort_values(['change_date']).share_trade_total.tolist()[-1] * 10000
+    df_today = pd.DataFrame({'day': [today], 'code': [stockcode], 'turnover_ratio': [volume/circulating_cap]})
+    ret = []
+    ret.append(df[['day', 'code', 'turnover_ratio']])
+    ret.append(df_today)
+    ret = pd.concat(ret)
+    return ret
 
 
 if __name__ == '__main__':
-    os.getcwd()
-    print(os.path)
-    t0 = time.time()
-    fold = 'e:/fof/cgo/'
-    fold_data = 'e:/fof/data/'
-    myclient = pymongo.MongoClient('mongodb://juzheng:jz2018*@192.168.2.201:27017/')
-    jzmongo = Arctic(myclient)
-    start_day = '2010-01-01'
-    fee = 0.00
-    end_day = datetime.date.today().strftime('%Y-%m-%d')
-    name_lst = ['bdt', 'xnyc', 'hlw', 'gkj', 'rgzn']
-    indus_name_lst = ['884160.WI', '884076.WI', '884224.WI', '399608.SZ', '884201.WI']
-    hq_dict = {}
-    for i in range(len(indus_name_lst)):
-        indus_name = indus_name_lst[i]
-        name = name_lst[i]
-        hq_df = stock_price_jz(indus_name, start_day, end_day)\
-            .assign(date_time=lambda df: df.date.apply(lambda x: str(x)[:10])).dropna()
-        # hq_df.to_csv(fold_data + 'hq_' + name + '.csv', encoding='gbk')
-        hq_dict[name] = hq_df
-    position_all = pd.read_csv(fold + 'indus_pos_df_all.csv', encoding='gbk')\
-        .assign(date_time=lambda df: df.trade_date.apply(lambda x: str(x)[:10]))\
-        .assign(position=lambda df: df.total.shift(1))[
-        ['date_time', 'position']]
-    position_all = position_all[position_all['date_time'] < '2020-02-01']
+    code = '000001.XSHE'
+    eday = datetime.datetime.today()
+    SZ50_stocks_list = get_index_stocks('000300.XSHG')
+    SZ50_stocks_list = normalize_code(SZ50_stocks_list)
+    for code in SZ50_stocks_list:
+        a = values_data_cgo(code, 2, eday)
 
-    for i in range(len(indus_name_lst)):
-        indus_name = indus_name_lst[i]
-        name = name_lst[i]
-        hq_df = hq_dict[name]
-        position = position_all.merge(hq_df, on=['date_time'])\
-            .assign(close_1=lambda df: df.close.shift(1)).dropna()
-
-        pos = 0
-        net_lst = []
-        net = 1
-        trd_time = 0
-        for idx, _row in position.iterrows():
-            if pos == 0:
-                if _row.position > 0:
-                    cost = _row.open * (1 + fee)
-                    pos = _row.position
-                    net = (pos * _row.close / cost + (1 - pos)) * net
-                    trd_time += 1
-                    pos = 1
-            elif pos > 0:
-                if _row.position == 0:
-                    s_price = _row.open * (1 - fee)
-                    net = net * (pos * s_price / _row.close_1 + (1 - pos))
-                    pos = 0
-                elif _row.position == pos:
-                    pos = pos
-                    net = net * ((1 + pos) - pos * (2 - _row.close / _row.close_1))
-                elif _row.position > pos:
-                    chg_pos = _row.position - pos
-                    cost = _row.open * (1 + fee)
-                    net = net * (chg_pos * _row.close / cost + pos * _row.close / _row.close_1 + (1-_row.position))
-                    pos = _row.position
-                elif _row.position < pos:
-                    chg_pos = pos - _row.position
-                    s_price = _row.open * (1 - fee)
-                    net = net * (chg_pos * s_price / _row.close_1 + _row.position * _row.close / _row.close_1 + (1-pos))
-                    pos = _row.position
-            net_lst.append(net)
-        position['net'] = net_lst
-        position['close_net'] = position['close'] / position['close'].tolist()[0]
-        chg_df = position[['date_time', 'net', 'close_net']]
-        chg_df['date_time'] = pd.to_datetime(chg_df['date_time'])
-        chg_df = chg_df.set_index(['date_time'])
-        sharpe_ratio = yearsharpRatio(net_lst, 1)
-        sharpe = yearsharpRatio(position['close_net'].tolist(), 1)
-        ann_return = annROR(net_lst, 1)
-        max_drawdown = maxRetrace(net_lst, 1)
-        title_str = 'sharpe %.2f %.2f ann_return %.2f max_drawdown %.2f' % (
-            sharpe_ratio, sharpe, 100 * ann_return, 100 * max_drawdown)
-        chg_df.ix[:, ['net', 'close_net']].plot()
-        plt.title(title_str)
-        plt.show()
 

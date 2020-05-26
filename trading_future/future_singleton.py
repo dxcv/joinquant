@@ -30,8 +30,7 @@ class Future:
         dict_all = dict()
         contract_lst = [i.upper() for i in contract_lst]
         for contract in contract_lst:
-            dict_all[contract] = {i: self.products_symbol_msg[''.join(re.split(r'[^A-Za-z]', contract))][contract][i]
-                                  for i in info_lst}
+            dict_all[contract] = {i: self.products_base_msg[contract[0:-4]][i] for i in info_lst}
         return dict_all
 
     def get_ExchangeID(self, contract_lst=None):
@@ -118,8 +117,7 @@ class Future:
         contract_lst = [i.upper() for i in contract_lst]
         for contract in contract_lst:
             dict_all[contract] = {i: self.products_symbol_msg[''.join(re.split(r'[^A-Za-z]', contract))][contract][i] for i in info_lst}
-            df = self.products_symbol_msg[''.join(re.split(r'[^A-Za-z]', contract))][contract]
-            a = 0
+            # dict_all[contract]['VolumeMultiple'] = self.products_base_msg[contract[0:-4]][contract]
         return dict_all
 
     def __get_product_mongomsg(self):

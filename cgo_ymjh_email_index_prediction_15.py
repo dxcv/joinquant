@@ -13,7 +13,7 @@ import numpy as np
 from jqdatasdk import *
 
 import copy
-auth('18610039264', 'zg19491001')
+auth('15658001226', 'taiyi123')
 import datetime
 import talib as tb
 import pymongo
@@ -41,11 +41,24 @@ def values_data_cgo(stockcode, count, eday):
     """
     q = query(valuation.code,
               valuation.turnover_ratio,
+              valuation.circulating_cap,
               ).filter(valuation.code == stockcode)
 
-    df = get_fundamentals_continuously(q, count=count, end_date=eday, panel=False)[['day', 'code', 'turnover_ratio']]
+    df = get_fundamentals_continuously(q, count=count, end_date=eday, panel=False)[
+        ['day', 'code', 'turnover_ratio', 'circulating_cap']]
 
-    return df
+    today = datetime.date.today()
+    temp = get_price(stockcode, start_date=today, end_date=today, frequency='daily', fields=None, skip_paused=True,
+                     fq='post', count=None).reset_index() \
+        .rename(columns={'index': 'day'})
+    volume = temp.volume.tolist()[-1] * 100 * 100
+    circulating_cap = df.circulating_cap.tolist()[-1] * 10000
+    df_today = pd.DataFrame({'day': [today], 'code': [stockcode], 'turnover_ratio': [volume/circulating_cap]})
+    ret = []
+    ret.append(df[['day', 'code', 'turnover_ratio']])
+    ret.append(df_today)
+    ret = pd.concat(ret)
+    return ret
 
 
 def stock_price_cgo(sec, sday, eday):

@@ -14,7 +14,6 @@ from data_engine.data_factory import DataFactory
 import redis
 import json
 import threading
-from data_engine.instrument.future import Future
 from backtest_func import *
 import matplotlib.pyplot as plt
 from matplotlib import style
@@ -26,10 +25,10 @@ import talib as tb
 import tkinter
 import tkinter.messagebox
 
-auth('18610039264', 'zg19491001')
+# auth('18610039264', 'zg19491001')
 style.use('ggplot')
 from tqsdk import TqApi, TqSim, TqAccount
-# auth('15658001226', 'taiyi123')
+auth('15658001226', 'taiyi123')
 myclient = pymongo.MongoClient('mongodb://juzheng:jz2018*@192.168.2.201:27017/')
 jzmongo = Arctic(myclient)
 from data_engine.data_factory import DataFactory
@@ -37,57 +36,6 @@ from data_engine.instrument.future import Future
 import data_engine.setting as setting
 from trading_simulate.trading_fuction import Trading
 from email_fuction import send_email
-
-
-class Future_ex(Future):
-    def __init__(self,symbol,by_ctp_instrument=False,info=None,rd=None):
-        Future.__init__(self,symbol=symbol,by_ctp_instrument=by_ctp_instrument,info=info)
-        self.rd = rd
-        self.run = True
-        self.t = None
-        print('init ' + self.ctp_symbol)
-
-    def start(self):
-        self.run = True
-        t = threading.Thread(target=self.pub)
-        t.setDaemon(True)
-        t.start()
-        self.t = t
-        return self
-
-    def end(self):
-        self.run = False
-        return self
-
-    def join(self):
-        self.t.join()
-
-    @property
-    def chan_sub(self):
-        return 'P_' + self.ctp_symbol
-
-    def pub(self):
-        if isinstance(self.rd,redis.Redis):
-            pub = self.rd.pubsub()
-            pub.subscribe(self.chan_sub)
-            while self.run:
-                data = pub.parse_response(block=False, timeout=60)
-                if data is None:
-                    time.sleep(0.5)
-                    continue
-                try:
-                    if data[0] == b'message':
-                        data = self.call_back(data=json.loads(data[2]))
-                        return data
-                    else:
-                        print(data[0])
-                except Exception as e:
-                    pass
-
-    def call_back(self,data):
-        # print(data)
-        # print(data['TRADE_CODE'],data['LastPrice'],data['AskPrice1'],data['BidPrice1'],data['TimeIndex'])
-        return data
 
 
 def get_normal_future_index_code(code_lst):
@@ -150,7 +98,7 @@ def get_alert_info(df, txt):
 
 def get_date(calen, today):
     next_tradeday = get_trade_days(start_date=today + datetime.timedelta(days=1), end_date='2030-01-01')[0]
-    if datetime.datetime.now().hour > 15:
+    if datetime.datetime.now().hour > 14:
         calen.append(next_tradeday)
     EndDate = calen[-1]
     StartDate = calen[0]
@@ -180,8 +128,10 @@ if __name__ == '__main__':
     # Trd = Trading(api)
     hold_code_lst = ['sc2007', 'sc2012']
     start_day = datetime.date.today().strftime('%Y-%m-%d')
+    # start_day = '2020-05-18'
     today = datetime.date.today()
     calen = get_trade_days(count=5)
+    calen = list(calen)
     calen, next_tradeday, EndDate, StartDate, hq_last_date = get_date(calen, today)
     end_day = EndDate
     print(end_day)
@@ -193,8 +143,8 @@ if __name__ == '__main__':
     long_code_lst = ['sc2007']
     short_code_lst = ['sc2012']
     # long_cost_lst = [311.16]
-    long_cost_lst = [267.6]
-    short_cost_lst = [318.7]
+    long_cost_lst = [267.4]
+    short_cost_lst = [315]
     long_volume = [1]
     short_volume = [-1]
     long_contract = [Future(symbol=i[:-4].upper()).contract_size for i in long_code_lst]
@@ -205,7 +155,7 @@ if __name__ == '__main__':
     times1 = 0
     times2 = 0
     times3 = 0
-    while datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') < '2020-05-20 02:30:00':
+    while datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') < '2020-05-21 02:30:00':
 
         lst = []
         long_value_now = 0
@@ -218,9 +168,7 @@ if __name__ == '__main__':
                 ['date_time', 'close', 'high', 'low', 'open']]
             print(data)
             price_now = data.close.tolist()[-1]
-
             long_value_now = long_value_now + price_now * long_contract[i] * long_volume[i]
-
         for i in range(len(short_code_lst)):
             index_code = short_code_lst[i]
             contract = short_contract[i]
@@ -239,21 +187,21 @@ if __name__ == '__main__':
 
         print(df.net_profit.tolist()[0])
 
-        if (df.net_profit.tolist()[0] < -0.01) and times1 == 0:
-            try:
-                send_email(df, '完成1次', receiver)
-                # logger_async.log(__name__, logger_async.critical, '完成第一次交易')
-            except Exception as e:
-                print(str(e))
-            try:
-                api = TqApi(TqAccount("G国泰君安", "85030120", "jz04282020"), web_gui=True)
-                Trd = Trading(api)
-                order = Trd.insert_order_sk_limit('INE.sc2012', 1)
-                order = Trd.insert_order_bk_limit('INE.sc2007', 1)
-                times1 += 1
-                break
-            except Exception as e:
-                print(str(e))
+        # if (df.net_profit.tolist()[0] < -0.01) and times1 == 0:
+        #     try:
+        #         send_email(df, '完成1次', receiver)
+        #         # logger_async.log(__name__, logger_async.critical, '完成第一次交易')
+        #     except Exception as e:
+        #         print(str(e))
+        #     try:
+        #         api = TqApi(TqAccount("G国泰君安", "85030120", "jz04282020"), web_gui=True)
+        #         Trd = Trading(api)
+        #         order = Trd.insert_order_sk_limit('INE.sc2012', 1)
+        #         order = Trd.insert_order_bk_limit('INE.sc2007', 1)
+        #         times1 += 1
+        #         break
+        #     except Exception as e:
+        #         print(str(e))
 
             # get_alert_info(df, '净亏损超4%：')
         # if (df.net_profit.tolist()[0] < -0.02) and times2 == 0:

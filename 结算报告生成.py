@@ -29,7 +29,7 @@ print('今日参考汇率: ' + str(exchange_rate))
 ###设定 df是浙商账户 df2是海通账户 total_assetss是两个账户资产总计
 df = pd.read_excel('g://trading//stock1.xlsx')
 df2 = pd.read_excel('g://trading//持仓情况.xlsx')
-total_asset = 5073021
+total_asset = 4898398
 export_file_path = 'g://trading//账户持仓报告.xlsx'
 
 df = df[:-1]
@@ -129,10 +129,13 @@ for i in range(len(temp)):
     if int(stock_code) > 400000:
         code = str(stock_code) + '.XSHG'
     elif int(stock_code) < 400000:
-        code = str(stock_code) + '.XSHE'
-    industry = pd.DataFrame(myclient['stock_fundamentals']['industry_swl2'].find({'code': code, 'date': '2020-05-01'}))[
-        'industry_sw_l2'][0]
-    temp['行业（申万二级）'][i] = industry
+        code = '0' * (6-len(str(stock_code))) + str(stock_code) + '.XSHE'
+    try:
+        industry = pd.DataFrame(myclient['stock_fundamentals']['industry_swl2'].find({'code': code, 'date': '2020-05-01'}))[
+            'industry_sw_l2'][0]
+        temp['行业（申万二级）'][i] = industry
+    except Exception as e:
+        print(str(e))
 
 temp = temp.sort_values(by=["行业（申万二级）", "盈亏比例"], ascending=False)
 temp = temp.set_index('证券代码')

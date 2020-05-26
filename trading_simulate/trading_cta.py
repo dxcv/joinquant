@@ -13,8 +13,8 @@ from jqdatasdk import *
 import datetime
 from trading_simulate.trading_fuction import Trading
 
-# auth('18610039264', 'zg19491001')
-auth('15658001226', 'taiyi123')
+auth('18610039264', 'zg19491001')
+# auth('15658001226', 'taiyi123')
 
 
 if __name__ == '__main__':
@@ -50,6 +50,7 @@ if __name__ == '__main__':
         print(trading_info)
         code_lst = trading_info.trading_code.tolist()
 
+        # while datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') < '2020-05-26 02:30:00':
         while True:
             print('==========================================================================================')
             orders = api.get_order()

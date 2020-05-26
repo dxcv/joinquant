@@ -56,7 +56,7 @@ if __name__ == '__main__':
             trading_code = ExchangeID_dict[main_contract]['ExchangeID'] + '.' + ExchangeInstID_dict[main_contract]['ExchangeInstID']
             signal_dict[symbol] = {
                 'symbol': symbol, 'trading_code': trading_code, 'weight': signal.loc[symbol]['weight'],
-                'last_price': api.get_quote(trading_code).last_price,
+                'last_price': api.get_quote(trading_code).pre_close,
                 'VolumeMultiple': VolumeMultiple_dict[main_contract]['VolumeMultiple']
                                    }
         trading_info = pd.DataFrame(signal_dict).T
