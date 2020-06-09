@@ -496,15 +496,15 @@ if __name__ == '__main__':
     # annror_36 = 0.1  # 股票型和混合型基金近3年年化收益阈值
     # maxretrace_60 = 0.45  # 近5年最大回撤阈值
     annror_36_402003 = 0  # 债券型基金近3年年化收益阈值
-    annror_36 = 0.05  # 股票型和混合型基金近3年年化收益阈值
-    maxretrace_60 = 0.45  # 近5年最大回撤阈值
+    annror_36 = 0.0  # 股票型和混合型基金近3年年化收益阈值
+    maxretrace_60 = 1  # 近5年最大回撤阈值
     max_period = 48  # 最大评级指标周期
 
     today = datetime.datetime.today()
     today = str(today)[:10]
     fund_stime = str(datetime.datetime.today() - relativedelta(months=max_period + 2))[:10]  # 基金池开始时间
 
-    operate_mode_id = [401001]  # [401001, 401003, 401006]
+    operate_mode_id = [401001, 401003]  # [401001, 401003, 401006]
     underlying_asset_type_id = [402001, 402003, 402004]  # [402001, 402003, 402004]
     # fund_id 为符合条件的基金名单
     ret = list()

@@ -505,7 +505,7 @@ if __name__ == '__main__':
     today = str(today)[:10]
     fund_stime = str(datetime.datetime.today() - relativedelta(months=max_period + 2))[:10]  # 基金池开始时间
 
-    operate_mode_id = [401001]  # [401001, 401003, 401006]
+    operate_mode_id = [401001, 401003]  # [401001, 401003, 401006]
     underlying_asset_type_id = [402001, 402003, 402004]  # [402001, 402003, 402004]
     # fund_id 为符合条件的基金名单
     ret = list()
@@ -744,4 +744,4 @@ if __name__ == '__main__':
     # 输出结果 
     fund_rank_r = pd.concat(ret)
     fund_rank_r = pd.merge(fund_name, fund_rank_r, on='code', how='inner')
-    fund_rank_r.to_csv('G:/lfp/result/fund_rank_position_chg_zf.csv', encoding='gbk')
+    fund_rank_r.to_csv('G:/lfp/result/fund_rank_position_chg_zf' + today + '.csv', encoding='gbk')

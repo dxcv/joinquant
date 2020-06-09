@@ -76,6 +76,8 @@ def stock_price_cgo(sec, sday, eday):
     输入 股票代码，开始日期，截至日期
     输出 个股的后复权的开高低收价格
     """
+    if sec[:1] == 'P':
+        print(sec)
     if sec in ['CU8888.XSGE', 'SN8888.XSGE', 'PB8888.XSGE', 'NI8888.XSGE', 'AL8888.XSGE', 'AU8888.XSGE', 'ZN8888.XSGE',
                'SC8888.XINE', 'AG8888.XSGE']:
         if sec == 'CU8888.XSGE':
@@ -323,8 +325,8 @@ if __name__ == '__main__':
     if datetime.datetime.now().hour < 9:
         end_day = calen[-2].strftime('%Y-%m-%d')
     # end_day = '2020-04-20'
-    mod = 1
-    hold_code_lst = ['RU', 'P', 'AU', 'C', 'CU', 'SC']
+    mod = 0
+    hold_code_lst = ['RU', 'P', 'AU', 'C', 'CU', 'SC', 'Y', 'CF']
     normalize_code_future, index_code_lst = get_normal_future_index_code()
     method = 1
     n = 1  # 回测周期

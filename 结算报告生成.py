@@ -29,7 +29,7 @@ print('今日参考汇率: ' + str(exchange_rate))
 ###设定 df是浙商账户 df2是海通账户 total_assetss是两个账户资产总计
 df = pd.read_excel('g://trading//stock1.xlsx')
 df2 = pd.read_excel('g://trading//持仓情况.xlsx')
-total_asset = 4898398
+total_asset = 5200314
 export_file_path = 'g://trading//账户持仓报告.xlsx'
 
 df = df[:-1]
