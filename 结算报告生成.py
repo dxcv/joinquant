@@ -10,7 +10,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import pymongo
 from arctic import Arctic, TICK_STORE, CHUNK_STORE
-
+total_asset = 7209753
 myclient = pymongo.MongoClient('mongodb://dbmanager_stock:jz471042@192.168.2.201:27017/')
 jzmongo = Arctic(myclient)
 
@@ -25,15 +25,24 @@ exchange_rate = float(exchange_rate)
 driver.close()
 
 print('今日参考汇率: ' + str(exchange_rate))
-
+def transfercode(x):
+    x = str(int(x))
+    if len(x)<6:
+        x = '0' * (6-len(x)) + x
+    return x
 ###设定 df是浙商账户 df2是海通账户 total_assetss是两个账户资产总计
 df = pd.read_excel('g://trading//stock1.xlsx')
-df2 = pd.read_excel('g://trading//持仓情况.xlsx')
-total_asset = 5200314
+df2 = pd.read_excel('g://trading//持仓情况.xlsx', encoding='gbk').rename(columns={'最新价': '市价', '浮动盈亏': '盈亏'}).iloc[:-1, :]
+print(df2)
+df2['证券代码'] = df2['证券代码'].apply(lambda x: transfercode(x))
+print(df2)
+
 export_file_path = 'g://trading//账户持仓报告.xlsx'
 
 df = df[:-1]
 df2 = df2[:-1]
+
+
 
 # 处理df2
 temp = pd.DataFrame()
@@ -65,15 +74,16 @@ for stock_name in df2['证券名称']:
         if 'nan' in str(market1):
             stock_cost1 = stock_cost1 * exchange_rate
             stock_price1 = stock_price1 * exchange_rate
-            profit1 = profit1 * exchange_rate
+            profit1 = profit1
         if 'nan' in str(market2):
             stock_cost2 = stock_cost2 * exchange_rate
             stock_price2 = stock_price2 * exchange_rate
-            profit2 = profit2 * exchange_rate
+            profit2 = profit2
 
         stock_num = stock_num1 + stock_num2  # 持股数
         profit = profit1 + profit2
         stock_cost = stock_cost1 * (stock_num1 / stock_num) + stock_cost2 * (stock_num2 / stock_num)  # 平均成本
+        stock_price = stock_price1 * (stock_num1 / stock_num) + stock_price2 * (stock_num2 / stock_num)  # 平均成本
         market_cap = stock_num1 * stock_price1 + stock_num2 * stock_price2  # 总持仓市值
         profit_ratio = profit / (stock_cost1 * stock_num1 + stock_cost2 * stock_num2) * 100  # 盈亏比例
 
@@ -99,6 +109,7 @@ for stock_name in df2['证券名称']:
 # 处理df
 for stock_name in df['证券名称']:
     stock_code = str(df[df['证券名称'] == stock_name]['证券代码'].iloc[0])
+    print(stock_code)
 
     if stock_name not in df2['证券名称'].to_list():
         print(stock_name)

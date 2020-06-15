@@ -45,7 +45,6 @@ def values_data_cgo(stockcode, count, eday):
     q = query(valuation.code,
               valuation.turnover_ratio,
               ).filter(valuation.code == stockcode)
-
     df = get_fundamentals_continuously(q, count=count, end_date=eday, panel=False)[
         ['day', 'code', 'turnover_ratio']]
 
@@ -79,27 +78,36 @@ def stock_price(sec, sday, eday):
 
 
 if __name__ == '__main__':
-    code_lst = ['RU1609', 'RU1701', 'RU1709', 'RU1801', 'RU1809', 'RU1901', 'RU1909', 'RU2001', 'RU2009', 'RU2101']
-    code_lst = [i + '.XSGE' for i in code_lst]
+    code_lst = ['Y1505', 'P1505', 'Y1605', 'P1605', 'Y1705', 'P1705', 'Y1805', 'P1805', 'Y1905', 'P1905', 'Y2005', 'P2005', 'Y2105', 'P2105']
+    code_lst = [i[:-1] + '1.XDCE' for i in code_lst]
     couple_lst = []
     for i in range(0, len(code_lst), 2):
         couple_lst.append((code_lst[i], code_lst[i+1]))
-    s_date = '2016-01-01'
-    e_date = '2020-06-01'
+    s_date = '2014-01-01'
+    e_date = '2020-02-01'
     ret = []
+    df_all = []
     for (code09, code01) in couple_lst:
+        s_date = '20' + str(int(code09[1:3]) - 1) + '-' + '01-01'
+        e_date = '20' + str(int(code09[1:3])) + '-' + '02-01'
         hq09 = stock_price(code09, s_date, e_date).assign(close09=lambda df: df.close)[['date_time', 'close09']]
         hq01 = stock_price(code01, s_date, e_date).assign(close01=lambda df: df.close)[['date_time', 'close01']]
         diff = hq09.merge(hq01, on=['date_time']).assign(date=lambda df: df.date_time.apply(lambda x: x[5:]))
-        diff['date' + code09[2:4]] = diff['date_time'].apply(lambda x: x[5:])
-        diff['20' + code09[2:4]] = diff['close09'] - diff['close01']
-        ret.append(diff[['date' + code09[2:4], '20' + code09[2:4]]])
-    ret = pd.concat(ret, axis=1)[['date16', '2016', '2017', '2018', '2019', '2020']].rename(columns={'date16': 'date_time'})
+        diff['date' + code09[1:3]] = diff['date_time'].apply(lambda x: x[5:])
+        diff[code09[1:5]] = diff['close09'] - diff['close01']
+        ret.append(diff[['date' + code09[1:3], code09[1:5]]])
+        df_all.append(diff[['date_time', 'close09', 'close01']])
+    ret = pd.concat(ret, axis=1)[['date16', '1501', '1601', '1701', '1801', '1901', '2001', '2101']].rename(columns={'date16': 'date_time'})
     print(ret)
     ret = ret.set_index(['date_time'])
-    ret.to_csv('G://zf//RU_09_01.csv')
-    ret.ix[:, ['2020', '2019', '2018', '2017', '2016']].plot()
+    ret.to_csv('G://zf//YM_01.csv')
+    ret.ix[:, ['2101', '2001', '1901', '1801', '1701', '1601', '1501']].plot()
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.title('豆油01-棕榈油01')
     plt.show()
+
+    df_all = pd.concat(df_all).rename(columns={'close09': 'Y05', 'close01': 'P05'})
+    df_all.to_csv('G://zf//YM_all01.csv')
 
 
 

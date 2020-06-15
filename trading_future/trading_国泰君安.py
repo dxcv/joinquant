@@ -739,121 +739,12 @@ class Future:
 
 
 if __name__ == '__main__':
-    DataFactory.config(MONGDB_PW='jz2018*', MONGDB_IP='192.168.2.201', MONGDB_USER='juzheng',
-                       DATASOURCE_DEFAULT=global_variable.DATASOURCE_REMOTE
-                       , logging_level=global_variable.logging.INFO)
-    rd = redis.Redis('192.168.1.36')
+    # DataFactory.config(MONGDB_PW='jz2018*', MONGDB_IP='192.168.2.201', MONGDB_USER='juzheng',
+    #                    DATASOURCE_DEFAULT=global_variable.DATASOURCE_REMOTE
+    #                    , logging_level=global_variable.logging.INFO)
+    # rd = redis.Redis('192.168.1.36')
     api = TqApi(TqAccount("G国泰君安", "85030120", "jz04282020"), web_gui=True)
     Trd = Trading(api)
-    # order = Trd.insert_order_sk_limit('INE.sc2012', 1)
-    # order = Trd.insert_order_bk_limit('INE.sc2007', 1)
-    hold_code_lst = ['sc2007', 'sc2012']
-    start_day = datetime.date.today().strftime('%Y-%m-%d')
-    end_day = datetime.date.today().strftime('%Y-%m-%d')
-    receiver = ['xiahutao@163.com', '3467518502@qq.com', '897174480@qq.com']
-    normalize_code_future, index_code_lst = get_normal_future_index_code(hold_code_lst)
-    for index_code in index_code_lst:
-        symble = normalize_code_future[index_code]
-    quote = api.get_quote("INE.sc2007")
-    print(quote.last_price)
-    long_code_lst = ['sc2007']
-    short_code_lst = ['sc2012']
-    # long_cost_lst = [311.16]
-    long_cost_lst = [271.7]
-    short_cost_lst = [321]
-    long_volume = [1]
-    short_volume = [-1]
+    order = Trd.insert_order_sp_limit('INE.sc2007', 1)
+    order = Trd.insert_order_bk_limit('INE.sc2008', 1)
 
-    porfolio = Future()
-    VolumeMultiple_dict = porfolio.get_VolumeMultiple(hold_code_lst)
-    # VolumeMultiple_dict[main_contract]['VolumeMultiple']
-    long_contract = [VolumeMultiple_dict[i.upper()]['VolumeMultiple'] for i in long_code_lst]
-    short_contract = [VolumeMultiple_dict[i.upper()]['VolumeMultiple'] for i in short_code_lst]
-    lst = []
-    long_value_ini = np.sum([long_cost_lst[i] * long_contract[i] * long_volume[i] for i in range(len(long_code_lst))])
-    short_value_ini = np.sum(
-        [short_cost_lst[i] * short_contract[i] * short_volume[i] for i in range(len(short_code_lst))])
-    times1 = 0
-    times2 = 0
-    times3 = 0
-    trad = True
-    while datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') < '2020-05-26 02:30:00':
-
-        lst = []
-        long_value_now = 0
-        short_value_now = 0
-
-        for i in range(len(long_code_lst)):
-            index_code = long_code_lst[i]
-            contract = long_contract[i]
-            api.wait_update()
-            quote = api.get_quote("INE.sc2007")
-            price_now = quote.last_price
-            limit_price = quote['upper_limit']
-            if price_now == limit_price:
-                trad = False
-            else:
-                trad = True
-            print(price_now)
-
-            long_value_now = long_value_now + price_now * long_contract[i] * long_volume[i]
-
-        for i in range(len(short_code_lst)):
-            index_code = short_code_lst[i]
-            contract = short_contract[i]
-            api.wait_update()
-            quote = api.get_quote("INE.sc2012")
-            price_now = quote.last_price
-            print(price_now)
-            limit_price = quote['lower_limit']
-            if price_now == limit_price:
-                trad = False
-            else:
-                trad = True
-            short_value_now = short_value_now + price_now * short_contract[i] * short_volume[i]
-        long_chng = long_value_now / long_value_ini - 1
-        short_chng = (short_value_now - short_value_ini) / np.abs(short_value_ini)
-
-        df = pd.DataFrame([[long_chng, short_chng, long_chng + short_chng]], columns=['long', 'short', 'net_profit'])
-        print(datetime.datetime.now())
-        print(df)
-        print(df.net_profit.tolist()[0])
-        print(trad)
-
-        if (df.net_profit.tolist()[0] < -0.01) and times1 == 0 and trad == True and \
-                datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') > '2020-05-25 21:00:30':
-            try:
-                send_email(df, '完成1次', receiver)
-                times1 += 1
-                # logger_async.log(__name__, logger_async.critical, '完成第一次交易')
-            except Exception as e:
-                print(str(e))
-            # try:
-            #     order = Trd.insert_order_sk_limit('INE.sc2012', 1)
-            #     order = Trd.insert_order_bk_limit('INE.sc2007', 1)
-            #     times1 += 1
-            #     break
-            # except Exception as e:
-            #     print(str(e))
-            get_alert_info(df, '净亏损超1%：')
-
-        if (df.net_profit.tolist()[0] < -0.02) and times2 == 0 and trad == True and \
-                datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') > '2020-05-25 21:00:30':
-            # order = Trd.insert_order_sk_limit('INE.sc2012', 1)
-            # order = Trd.insert_order_bk_limit('INE.sc2007', 1)
-            try:
-                send_email(df, '完成2次', receiver)
-                times2 += 1
-                # logger_async.log(__name__, logger_async.critical, '完成第一次交易')
-            except Exception as e:
-                print(str(e))
-        # if (df.net_profit.tolist()[0] < -0.03) and times3 == 0:
-        #     order = Trd.insert_order_sk_limit('INE.sc2012', 1)
-        #     order = Trd.insert_order_bk_limit('INE.sc2007', 1)
-        #     times3 += 1
-        #     try:
-        #         send_email(df, '完成3次', receiver)
-        #         # logger_async.log(__name__, logger_async.critical, '完成第一次交易')
-        #     except Exception as e:
-        #         print(str(e))
-        time.sleep(5)

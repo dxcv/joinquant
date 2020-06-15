@@ -18,7 +18,8 @@ import math
 from arctic import Arctic, TICK_STORE, CHUNK_STORE
 style.use('ggplot')
 from jqdatasdk import *
-
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
 import copy
 auth('18610039264', 'zg19491001')
 import datetime
@@ -79,26 +80,63 @@ def stock_price(sec, sday, eday):
 
 
 if __name__ == '__main__':
-    code_lst = ['RU1609', 'RU1701', 'RU1709', 'RU1801', 'RU1809', 'RU1901', 'RU1909', 'RU2001', 'RU2009', 'RU2101']
-    code_lst = [i + '.XSGE' for i in code_lst]
+    code_lst = ['Y1409', 'P1409', 'Y1509', 'P1509', 'Y1609', 'P1609', 'Y1709', 'P1709', 'Y1809', 'P1809', 'Y1909', 'P1909', 'Y2009', 'P2009']
+    code_lst = [i + '.XDCE' for i in code_lst]
     couple_lst = []
     for i in range(0, len(code_lst), 2):
         couple_lst.append((code_lst[i], code_lst[i+1]))
-    s_date = '2016-01-01'
+    s_date = '2013-09-01'
     e_date = '2020-06-01'
     ret = []
+    df_all = []
     for (code09, code01) in couple_lst:
+        s_date = '20' + str(int(code09[1:3]) - 1) + '-' + '09-01'
+        e_date = '20' + str(int(code09[1:3])) + '-' + '10-01'
         hq09 = stock_price(code09, s_date, e_date).assign(close09=lambda df: df.close)[['date_time', 'close09']]
         hq01 = stock_price(code01, s_date, e_date).assign(close01=lambda df: df.close)[['date_time', 'close01']]
         diff = hq09.merge(hq01, on=['date_time']).assign(date=lambda df: df.date_time.apply(lambda x: x[5:]))
-        diff['date' + code09[2:4]] = diff['date_time'].apply(lambda x: x[5:])
-        diff['20' + code09[2:4]] = diff['close09'] - diff['close01']
-        ret.append(diff[['date' + code09[2:4], '20' + code09[2:4]]])
-    ret = pd.concat(ret, axis=1)[['date16', '2016', '2017', '2018', '2019', '2020']].rename(columns={'date16': 'date_time'})
+        diff['date' + code09[1:3]] = diff['date_time'].apply(lambda x: x[5:])
+        diff[code09[1:5]] = diff['close09'] - diff['close01']
+        ret.append(diff[['date' + code09[1:3], code09[1:5]]])
+        df_all.append(diff[['date_time', 'close09', 'close01']])
+    ret = pd.concat(ret, axis=1)[['date16', '2009', '1909', '1809', '1709', '1609', '1509', '1409']].rename(
+        columns={'date16': 'date_time'})
     print(ret)
+
     ret = ret.set_index(['date_time'])
-    ret.to_csv('G://zf//RU_09_01.csv')
-    ret.ix[:, ['2020', '2019', '2018', '2017', '2016']].plot()
+    ret.to_csv('G://zf//YM_01.csv')
+    ret.ix[:, ['2009', '1909', '1809', '1709', '1609', '1509', '1409']].plot()
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.title('豆油09-棕榈油09')
+    plt.show()
+
+    df_all = pd.concat(df_all).rename(columns={'close09': 'Y09', 'close01': 'P09'})
+    exam_X = df_all.loc[:, 'Y09']
+    exam_y = df_all.loc[:, 'P09']
+    rDF = df_all.corr()
+    print(rDF)
+    X_train, X_test, y_train, y_test = train_test_split(exam_X, exam_y, train_size=.95, test_size=.05)
+    X_train = np.array(X_train)
+
+    df_all.to_csv('G://zf//YM_all.csv')
+    model = LinearRegression()
+    # 训练模型
+
+    X_train = X_train.reshape(-1, 1)
+
+    model.fit(X_train, y_train)
+    a = model.intercept_
+    b = model.coef_
+    print('最佳拟合线：截距a=', a, '，回归系数b=', b)
+
+    plt.scatter(X_train, y_train, color='r', label='相关系数0.92')  # 绘制散点图
+    y_train_pred = model.predict(X_train)  # 训练数据的预测值
+    plt.plot(X_train, y_train_pred, color='black', linewidth=3)  # 绘制最佳拟合线
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.legend(loc=2)
+    plt.xlabel("豆油")
+    plt.ylabel("棕榈油")
+    plt.title('豆棕价格线性回归')
     plt.show()
 
 
