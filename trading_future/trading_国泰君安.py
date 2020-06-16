@@ -745,6 +745,8 @@ if __name__ == '__main__':
     # rd = redis.Redis('192.168.1.36')
     api = TqApi(TqAccount("G国泰君安", "85030120", "jz04282020"), web_gui=True)
     Trd = Trading(api)
-    order = Trd.insert_order_sp_limit('INE.sc2007', 1)
-    order = Trd.insert_order_bk_limit('INE.sc2008', 1)
+    for i in range(2):
+        order = Trd.insert_order_sp_limit('INE.sc2007', 1)
+        order = Trd.insert_order_bk_limit('INE.sc2008', 1)
+        time.sleep(5)
 
