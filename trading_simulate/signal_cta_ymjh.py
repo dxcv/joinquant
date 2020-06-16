@@ -272,7 +272,7 @@ if __name__ == '__main__':
         # send_email(res_n, date, receiver)
 
         trading_info = get_signal(res_n, aum, balance, EndDate, close_dict)
-        trading_info.to_csv('G://trading_strategy//' + 'position_ymjh_' + hq_last_date + '1.csv')
+        trading_info.to_csv('G://trading_strategy//' + 'position_ymjh_' + hq_last_date + '.csv')
         subject = date + strategy_id
         send_email(trading_info, subject, receiver)
 
