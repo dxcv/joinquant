@@ -396,18 +396,33 @@ if __name__ == '__main__':
             ['date_time'])
         data_daily = data_daily.fillna(method='ffill')
         # data_daily.to_csv(fold_data + symble + '_data_daily.csv')
-        data_daily['day_kd_b'] = (data_daily['k_day'] > data_daily['d_day']) & (
-                data_daily['k_day'].shift(1) < data_daily['d_day'].shift(1)) & (
-                                         data_daily['k_day'] < k1[1]) & (data_daily['d_day'] > k1[0])
-        data_daily['day_kd_s'] = (data_daily['k_day'] < data_daily['d_day']) & (
-                data_daily['k_day'].shift(1) > data_daily['d_day'].shift(1)) & (
-                                         data_daily['k_day'] > k2[0]) & (data_daily['d_day'] < k2[1])
-        data_daily['week_kd_b'] = (data_daily['k_week'] > data_daily['d_week']) & (
-                data_daily['k_week'].shift(1) < data_daily['d_week'].shift(1)) & (
-                                          data_daily['k_week'] < k1[1]) & (data_daily['d_week'] > k1[0])
-        data_daily['week_kd_s'] = (data_daily['k_week'] < data_daily['d_week']) & (
-                data_daily['k_week'].shift(1) > data_daily['d_week'].shift(1)) & (
-                                          data_daily['k_week'] > k2[0]) & (data_daily['d_week'] < k2[1])
+        data_daily['day_kd_b'] = ((data_daily['k_day'].shift(1) > data_daily['d_day'].shift(1)) & (
+                data_daily['k_day'].shift(2) < data_daily['d_day'].shift(2)) & (
+                                         data_daily['d_day'].shift(1) <= 20) & (data_daily['d_day'] > 20)) | (
+                (data_daily['k_day'].shift(2) > data_daily['d_day'].shift(2)) & (
+                data_daily['k_day'].shift(3) < data_daily['d_day'].shift(3)) & (data_daily['d_day'].shift(2) <= 20) & (data_daily['d_day'].shift(1) <= 20) & (
+                (data_daily['d_day'] > 20)))
+        data_daily['day_kd_s'] = ((data_daily['k_day'].shift(1) < data_daily['d_day'].shift(1)) & (
+                data_daily['k_day'].shift(2) > data_daily['d_day'].shift(2)) & (data_daily['d_day'].shift(1) >= 80) & (
+                (data_daily['d_day'] < 80))) | ((data_daily['k_day'].shift(2) < data_daily['d_day'].shift(2)) & (
+                data_daily['k_day'].shift(3) > data_daily['d_day'].shift(3)) & (data_daily['d_day'].shift(2) >= 80) & (data_daily['d_day'].shift(1) >= 80) & (
+                (data_daily['d_day'] < 80)))
+        data_daily['week_kd_b'] = ((data_daily['k_week'].shift(1) > data_daily['d_week'].shift(1)) & (
+                data_daily['k_week'].shift(2) < data_daily['d_week'].shift(2)) & (
+                                          data_daily['d_week'].shift(1) <= 20) & (data_daily['d_week'] > 20)) | (
+                                         (data_daily['k_week'].shift(2) > data_daily['d_week'].shift(2)) & (
+                                         data_daily['k_week'].shift(3) < data_daily['d_week'].shift(3)) & (
+                                                     data_daily['d_week'].shift(2) <= 20) & (
+                                                     data_daily['d_week'].shift(1) <= 20) & (
+                                             (data_daily['d_week'] > 20)))
+        data_daily['week_kd_s'] = ((data_daily['k_week'].shift(1) < data_daily['d_week'].shift(1)) & (
+                data_daily['k_week'].shift(2) > data_daily['d_week'].shift(2)) & (data_daily['d_week'].shift(1) >= 80) & (
+                                      (data_daily['d_week'] < 80))) | (
+                                             (data_daily['k_week'].shift(2) < data_daily['d_week'].shift(2)) & (
+                                             data_daily['k_week'].shift(3) > data_daily['d_week'].shift(3)) & (
+                                                         data_daily['d_week'].shift(2) >= 80) & (
+                                                         data_daily['d_week'].shift(1) >= 80) & (
+                                                 (data_daily['d_week'] < 80)))
         data_daily = data_daily.dropna()
         data_daily['macd_week_abs'] = np.abs(data_daily['macd_week'])
         data_daily['rank_week'] = data_daily.macd_week_abs.rank(method='min').astype(int)
@@ -424,14 +439,17 @@ if __name__ == '__main__':
     df['简称'] = name_lst
     df[['k_day', 'd_day', 'k_week', 'd_week', 'percentile_week', 'percentile_day']] = df[
         ['k_day', 'd_day', 'k_week', 'd_week', 'percentile_week', 'percentile_day']].apply(lambda x: np.around(x, 2))
+    df_day_buy = df[df['day_kd_b'] == True]
+    df_day_sell = df[(df['day_kd_s'] == True)]
+    print(df_day_sell)
+
+    df_week_buy = df[df['week_kd_b'] == True]
+    df_week_sell = df[df['week_kd_s'] == True]
     df['stock_code'] = df['stock_code'].apply(lambda x: x[:-9])
     df = df[['date_time', '简称', 'stock_code', 'day_kd_b', 'day_kd_s', 'week_kd_b', 'week_kd_s', 'k_day', 'd_day', 'k_week',
              'd_week', 'percentile_day', 'percentile_week']]
 
-    df_day_buy = df[df['day_kd_b']==True]
-    df_day_sell = df[df['day_kd_s']==True]
-    df_week_buy = df[df['week_kd_b']==True]
-    df_week_sell = df[df['week_kd_s']==True]
+
     # get_alert_info(df_day_buy, '日级别KD金叉:')
     # get_alert_info(df_week_buy, '周级别KD金叉:')
     # get_alert_info(df_day_sell, '日级别KD死叉:')
@@ -472,7 +490,7 @@ if __name__ == '__main__':
 
     df.to_csv(fold_data + 'kdj_future_' + end_day + '1.csv', encoding='gbk')
     print(time.time() - t0)
-    PDFGenerator('kdj_macd_future_signal_' + end_day).genTaskPDF(
+    PDFGenerator('kdj_macd_future_signal_before_' + end_day).genTaskPDF(
         df_day_buy_hold, df_day_sell_hold, df_week_buy_hold, df_week_sell_hold,
         df_week_buy[df_week_buy['代码'].isin(other_code)], df_week_sell[df_week_sell['代码'].isin(other_code)],
                method)
